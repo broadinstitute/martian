@@ -38,7 +38,7 @@ load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_depe
 
 go_rules_dependencies()
 
-go_register_toolchains(version = "host")
+go_register_toolchains(version = "1.24.0")
 
 load("//:deps.bzl", "martian_dependencies")
 
@@ -47,7 +47,10 @@ martian_dependencies()
 
 load("@build_bazel_rules_nodejs//:index.bzl", "node_repositories")
 
-node_repositories(package_json = ["//web/martian:package.json"])
+node_repositories(
+    node_version = "17.4.0",
+    package_json = ["//web/martian:package.json"],
+)
 
 load("//:npm.bzl", "martian_npm_repo")
 

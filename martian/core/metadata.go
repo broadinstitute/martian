@@ -877,6 +877,46 @@ func (self *Metadata) endRefresh(lastRefresh time.Time) {
 // written until the next time the pipestance run loop has a chance to refresh
 // the metadata, as it's possible the job completed between the last check for
 // metadata updates and when the query completed.
+// Mark a job as failed immediately, because the job manager reported a
+// specific, actionable failure reason for it (e.g. a Slurm NODE_FAIL),
+// rather than the job simply having vanished from the queue.  Unlike
+// failNotRunning, this does not wait out the queue-check grace period,
+// since the failure reason is definitive rather than inferred from
+// silence.
+func (self *Metadata) failImmediately(jobid string, reason string) {
+	if !self.exists(JobId) {
+		return
+	}
+	if st, _ := self.getState(); st != Running && st != Queued {
+		return
+	}
+	// Check whether the job has changed state but we just didn't see the
+	// journal update for whatever reason.
+	self.poll()
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+	if st, _ := self._getStateNoLock(); st != Running && st != Queued {
+		return
+	}
+	if self.readRaw(JobId) != jobid {
+		return
+	}
+	// Double-check that the job wasn't reset while jobid was being read.
+	if !self._existsNoLock(JobId) {
+		return
+	}
+	self.notRunningSince = time.Time{}
+	util.LogInfo("runtime",
+		"Job %s for %s was reported as failed by the job manager: %s.  Failing.",
+		jobid, self.fqname, reason)
+	if err := self._writeRawNoLock(Errors, fmt.Sprintf(
+		"The job manager reported that the job for %s (%s) failed: %s.",
+		self.fqname, jobid, reason)); err != nil {
+		util.LogError(err, "runtime",
+			"Error writing error message about job manager reported job failure.")
+	}
+}
+
 func (self *Metadata) failNotRunning(jobid string) {
 	if !self.exists(JobId) {
 		return

@@ -539,8 +539,18 @@ func (self *Pipestance) queryQueue(outerCtx context.Context) {
 	prepDone = true
 	go func(ctx context.Context, task *trace.Task) {
 		defer task.End()
-		queued, raw := self.node.top.rt.JobManager.checkQueue(jobsIn, ctx)
+		queued, failed, raw := self.node.top.rt.JobManager.checkQueue(jobsIn, ctx)
 		for _, id := range queued {
+			delete(needsQuery, id)
+		}
+		if !self.readOnly() {
+			for id, reason := range failed {
+				if m := needsQuery[id]; m != nil {
+					m.failImmediately(id, reason)
+				}
+			}
+		}
+		for id := range failed {
 			delete(needsQuery, id)
 		}
 		if len(needsQuery) > 0 && raw != "" {

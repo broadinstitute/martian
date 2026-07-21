@@ -371,9 +371,13 @@ func (self *RemoteJobManager) sendJob(shellCmd string, argv []string, envs map[s
 	}
 }
 
-func (self *RemoteJobManager) checkQueue(ids []string, ctx context.Context) ([]string, string) {
+// checkQueue's output lines are either a bare job ID, meaning the job is
+// still queued or running, or a job ID followed by whitespace and a failure
+// reason (e.g. "294 NODE_FAIL"), meaning the queue query script determined
+// the job failed for a specific, immediately-actionable reason.
+func (self *RemoteJobManager) checkQueue(ids []string, ctx context.Context) ([]string, map[string]string, string) {
 	if self.config.queueQueryCmd == "" {
-		return ids, ""
+		return ids, nil, ""
 	}
 	jobPath := util.RelPath(path.Join("..", "jobmanagers"))
 	cmd := exec.CommandContext(ctx, path.Join(jobPath, self.config.queueQueryCmd))
@@ -383,9 +387,25 @@ func (self *RemoteJobManager) checkQueue(ids []string, ctx context.Context) ([]s
 	cmd.Stderr = &stderr
 	output, err := cmd.Output()
 	if err != nil {
-		return ids, stderr.String()
+		return ids, nil, stderr.String()
 	}
-	return strings.Split(string(output), "\n"), stderr.String()
+	var queued []string
+	var failed map[string]string
+	for _, line := range strings.Split(string(output), "\n") {
+		fields := strings.Fields(line)
+		switch len(fields) {
+		case 0:
+			continue
+		case 1:
+			queued = append(queued, fields[0])
+		default:
+			if failed == nil {
+				failed = make(map[string]string, 1)
+			}
+			failed[fields[0]] = strings.Join(fields[1:], " ")
+		}
+	}
+	return queued, failed, stderr.String()
 }
 
 func (self *RemoteJobManager) hasQueueCheck() bool {

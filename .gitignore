@@ -10,3 +10,5 @@ coverage.out
 coverage.html
 /.vscode/
 *.pprof
+.DS_Store
+/*.tar.gz

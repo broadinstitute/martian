@@ -1,5 +1,5 @@
 {
-  "default_retries": 2,
+  "default_retries": 5,
   "retry_on": [
     "^signal: ",
     "^(?:[0-9-]+ [0-9:]+ )?Caught signal ",
@@ -9,6 +9,7 @@
     "^error: JSV stderr: error: commlib error: got select error (Connection refused)",
     "^Unable to run job: failed receiving gdi request response",
     "^According to the job manager, the job for .+ has not been (?:queued or )?running",
+    "^The job manager reported that the job for .+ failed: NODE_FAIL",
     "^IOError: \\[Errno 116\\] Stale file handle",
     "^OSError: \\[Errno 11\\] Resource temporarily unavailable",
     "^jobcmd error \\(exit status \\d+\\)",

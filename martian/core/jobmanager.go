@@ -31,10 +31,12 @@ type JobManager interface {
 	endJob(*Metadata)
 
 	// Given a list of candidate job IDs, returns a list of jobIds which may be
-	// still queued or running, as well as the stderr output of the queue check.
-	// If this job manager doesn't know how to check the queue or the query
-	// fails, it simply returns the list it was given.
-	checkQueue([]string, context.Context) ([]string, string)
+	// still queued or running, a map from job ID to failure reason for jobs
+	// which are known to have failed with a specific, immediately-actionable
+	// reason (e.g. a Slurm NODE_FAIL), and the stderr output of the queue
+	// check. If this job manager doesn't know how to check the queue or the
+	// query fails, it simply returns the list it was given and a nil map.
+	checkQueue([]string, context.Context) ([]string, map[string]string, string)
 	// Returns true if checkQueue does something useful.
 	hasQueueCheck() bool
 	// Returns the amount of time to wait, after a job is found to be unknown

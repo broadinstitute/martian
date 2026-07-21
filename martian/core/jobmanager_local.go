@@ -487,8 +487,8 @@ func (self *LocalJobManager) GetSystemReqs(result JobResources) JobResources {
 	return result
 }
 
-func (self *LocalJobManager) checkQueue(ids []string, _ context.Context) ([]string, string) {
-	return ids, ""
+func (self *LocalJobManager) checkQueue(ids []string, _ context.Context) ([]string, map[string]string, string) {
+	return ids, nil, ""
 }
 
 func (self *LocalJobManager) hasQueueCheck() bool {
