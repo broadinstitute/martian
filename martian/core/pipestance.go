@@ -495,7 +495,7 @@ func (self *Pipestance) queryQueue(outerCtx context.Context) {
 		!self.node.top.rt.JobManager.hasQueueCheck() {
 		return
 	}
-	QUEUE_CHECK_LIMIT := 5 * time.Minute
+	QUEUE_CHECK_LIMIT := 30 * time.Second
 	self.queueCheckLock.Lock()
 	if self.queueCheckActive || time.Since(self.lastQueueCheck) < QUEUE_CHECK_LIMIT {
 		self.queueCheckLock.Unlock()
